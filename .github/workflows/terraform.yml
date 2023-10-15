@@ -42,21 +42,24 @@
 #       with:
 #         cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
 
-name: 'Terraform'
+name: 'Deploy Terrafrom Resource Group'
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
+  workflow_dispatch
 
 permissions:
   contents: read
 
 jobs:
-  terraform:
-    name: 'Terraform'
+  deploy_resource_group:
+    name: 'Deploy_resource_rg'
+    env:
+      AZ_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID_}}
+      AZ_CLIENT_SECRETS: ${{ secrets.AZURE_AD_SECRET_ID}}
+      AZ_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID}}
+      AZ_SUBSCRIPTION_ID: ${{ secrets.AZURE_AD_SUBSCRIPTION_ID}}
     runs-on: ubuntu-latest
-    environment: production
+    environment: dev
 
     # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
     defaults:
@@ -68,11 +71,16 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
 
+    - name: Login to Microsoft Azure
+      uses: azure/login@v1
+      with:
+        client-id: ${{ env.AZ_CLIENT_ID }}
+        tenant-id: ${{ env.AZ_TENANT_ID }}
+        subscription-id: ${{ env.AZ_SUBSCRIPTION_ID }}
+
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+      uses: hashicorp/setup-terraform@v2
 
     # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
     - name: Terraform Init
@@ -89,5 +97,13 @@ jobs:
       # On push to "main", build or change infrastructure according to Terraform configuration files
       # Note: It is recommended to set up a required "strict" status check in your repository for "Terraform Cloud". See the documentation on "strict" required status checks for more information: https://help.github.com/en/github/administering-a-repository/types-of-required-status-checks
     - name: Terraform Apply
-      if: github.ref == 'refs/heads/"main"' && github.event_name == 'push'
+      
       run: terraform apply -auto-approve -input=false
+
+    - name: Azure CLI script
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          az logout
+          az cache purge
+          az account clear
