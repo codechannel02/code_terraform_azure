@@ -73,9 +73,9 @@ jobs:
     - name: Login to Microsoft Azure
       uses: azure/login@v1
       with:
-        client-id: ${{ env.AZ_CLIENT_ID }}
-        tenant-id: ${{ env.AZ_TENANT_ID }}
-        subscription-id: ${{ env.AZ_SUBSCRIPTION_ID }}
+        client-id: ${{ secrets.AZURE_AD_CLIENT_ID_}}
+        tenant-id:  ${{ secrets.AZURE_AD_TENANT_ID}}
+        subscription-id: ${{ secrets.AZURE_AD_SUBSCRIPTION_ID}}
 
     # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
     - name: Setup Terraform
